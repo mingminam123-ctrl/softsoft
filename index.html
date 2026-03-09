@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#fff4f8" />
+  <title>Softsoft 番茄钟</title>
+  <style>
+    :root{
+      --bg1:#fff7fb;
+      --bg2:#fff3ea;
+      --card:#ffffffd9;
+      --text:#4b3d52;
+      --muted:#8d7e96;
+      --accent:#ff8fb1;
+      --accent-2:#a88bff;
+      --ok:#7bc8a4;
+      --warn:#ffb86b;
+      --shadow:0 14px 40px rgba(171, 130, 177, 0.16);
+      --radius:24px;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, #ffe5ef 0, transparent 32%),
+        radial-gradient(circle at top right, #efe8ff 0, transparent 28%),
+        linear-gradient(135deg,var(--bg1),var(--bg2));
+      min-height:100vh;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .wrap{
+      width:min(1100px, calc(100vw - 24px));
+      margin:18px auto 34px;
+      display:grid;
+      grid-template-columns: 1.18fr .82fr;
+      gap:18px;
+    }
+    .card{
+      background:var(--card);
+      backdrop-filter: blur(12px);
+      border:1px solid rgba(255,255,255,0.8);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .main{padding:20px}
+    .side{padding:16px}
+    .title{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    h1{
+      margin:0;
+      font-size:28px;
+      line-height:1.1;
+    }
+    .subtitle{
+      color:var(--muted);
+      margin-top:6px;
+      font-size:14px;
+      line-height:1.5;
+    }
+    .badge{
+      font-size:13px;
+      color:#fff;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      padding:9px 12px;
+      border-radius:999px;
+      white-space:nowrap;
+      box-shadow:0 6px 18px rgba(255,143,177,.25);
+    }
+    .timer-block{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:18px;
+      margin-top:16px;
+    }
+    .clock{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      min-height:400px;
+      position:relative;
+      overflow:hidden;
+    }
+    .ring{
+      width:min(72vw, 334px);
+      height:min(72vw, 334px);
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:conic-gradient(var(--accent) 0deg, #ffd3e0 0deg, #f7edf4 0deg);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.7), 0 10px 30px rgba(255,143,177,0.18);
+      transition:background .3s ease;
+    }
+    .ring-inner{
+      width:78%;
+      height:78%;
+      border-radius:50%;
+      background:rgba(255,255,255,.9);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      box-shadow: inset 0 0 0 1px rgba(248,240,246,.9);
+      text-align:center;
+      padding:12px;
+    }
+    .phase{
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
+    .time{
+      font-size:58px;
+      font-weight:760;
+      letter-spacing:1px;
+      line-height:1;
+      margin-bottom:10px;
+      font-variant-numeric: tabular-nums;
+    }
+    .taskline{
+      font-size:15px;
+      color:var(--text);
+      max-width:220px;
+      min-height:22px;
+      text-wrap:balance;
+      line-height:1.45;
+    }
+    .sparkle{
+      position:absolute;
+      inset:auto 18px 18px auto;
+      font-size:12px;
+      color:var(--muted);
+      background:#fff;
+      border:1px solid #f3e6ee;
+      border-radius:999px;
+      padding:8px 12px;
+      max-width:70%;
+    }
+    .controls,.settings,.micro-list,.rewards,.install-box{
+      padding:16px;
+    }
+    .controls{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height:400px;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    button{
+      border:0;
+      border-radius:16px;
+      padding:14px 16px;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .08s ease, opacity .2s ease, box-shadow .2s ease;
+    }
+    button:active{ transform:translateY(1px) scale(.99); }
+    .primary{
+      background:linear-gradient(135deg,var(--accent),#ff9dc8);
+      color:#fff;
+      box-shadow:0 10px 20px rgba(255,143,177,.26);
+      flex:1;
+    }
+    .ghost{
+      background:#fff;
+      color:var(--text);
+      border:1px solid #f0e5ec;
+      flex:1;
+    }
+    .tiny{
+      padding:10px 12px;
+      border-radius:12px;
+      font-size:14px;
+      background:#fff;
+      border:1px solid #f0e5ec;
+      color:var(--text);
+      flex:1 1 120px;
+    }
+    .hint{
+      background:linear-gradient(135deg,#fff,#fff9fc);
+      border:1px dashed #f1dbe6;
+      border-radius:18px;
+      padding:14px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.6;
+    }
+    .focus-tools{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
+    }
+    .toggle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background:#fff;
+      border:1px solid #f0e5ec;
+      padding:12px 14px;
+      border-radius:16px;
+    }
+    .toggle span{
+      font-size:14px;
+      color:var(--text);
+      font-weight:600;
+      line-height:1.3;
+    }
+    .toggle input{ transform:scale(1.15); }
+    .side h3{
+      margin:0 0 12px;
+      font-size:17px;
+    }
+    .setting-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .field label{
+      font-size:12px;
+      color:var(--muted);
+      padding-left:4px;
+    }
+    input[type="number"], input[type="text"]{
+      width:100%;
+      border:1px solid #eddfe8;
+      background:#fff;
+      border-radius:14px;
+      padding:12px 12px;
+      font-size:15px;
+      color:var(--text);
+      outline:none;
+    }
+    .task-input{ width:100%; }
+    .micro-list ul, .rewards ul{
+      list-style:none;
+      padding:0;
+      margin:0;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .micro-item, .reward-item{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      background:#fff;
+      border:1px solid #f0e5ec;
+      border-radius:16px;
+      padding:12px 14px;
+      font-size:14px;
+      line-height:1.45;
+    }
+    .micro-item input, .reward-item input{ margin-top:2px; transform:scale(1.1); }
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+      margin-top:12px;
+    }
+    .stat{
+      background:#fff;
+      border:1px solid #f0e5ec;
+      border-radius:16px;
+      padding:14px 10px;
+      text-align:center;
+    }
+    .stat b{
+      display:block;
+      font-size:23px;
+      margin-bottom:4px;
+    }
+    .stat span{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.3;
+    }
+    .footer-note{
+      margin-top:12px;
+      color:var(--muted);
+      font-size:13px;
+      text-align:center;
+      line-height:1.5;
+    }
+    .install-box{
+      margin-top:14px;
+      background:linear-gradient(135deg,#fff,#fff6fb);
+      border:1px solid #f0e5ec;
+      border-radius:18px;
+    }
+    .install-box p{
+      margin:0;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:20px;
+      transform:translateX(-50%) translateY(20px);
+      opacity:0;
+      pointer-events:none;
+      background:rgba(61, 46, 70, 0.9);
+      color:#fff;
+      padding:12px 16px;
+      border-radius:999px;
+      font-size:14px;
+      transition:.28s ease;
+      max-width:90vw;
+      text-align:center;
+      z-index:999;
+    }
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
+    @media (max-width: 920px){
+      .wrap{ grid-template-columns:1fr; }
+      .timer-block{ grid-template-columns:1fr; }
+      .controls{ min-height:auto; }
+    }
+    @media (max-width: 620px){
+      .wrap{ width:min(100vw - 14px, 1100px); margin:10px auto 20px; gap:12px; }
+      .main,.side,.controls,.settings,.micro-list,.rewards,.install-box{ padding:14px; }
+      .clock{ min-height:unset; padding:14px; }
+      .time{ font-size:50px; }
+      .focus-tools,.setting-grid,.stats{ grid-template-columns:1fr 1fr; }
+      h1{ font-size:24px; }
+      .badge{ font-size:12px; padding:8px 10px; }
+      .title{ align-items:center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card main">
+      <div class="title">
+        <div>
+          <h1>Softsoft 番茄钟</h1>
+          <div class="subtitle">升级成 iPhone 友好版啦：会自动保存你的设置、统计、勾选状态和当前进度。</div>
+        </div>
+        <div class="badge">ADHD 友好版</div>
+      </div>
+
+      <div class="timer-block">
+        <div class="clock card">
+          <div class="ring" id="ring">
+            <div class="ring-inner">
+              <div class="phase" id="phaseLabel">准备开始</div>
+              <div class="time" id="timeDisplay">25:00</div>
+              <div class="taskline" id="taskLabel">先写下这轮最小任务 ✨</div>
+            </div>
+          </div>
+          <div class="sparkle" id="microPrompt">先做 2 分钟也算开始</div>
+        </div>
+
+        <div class="controls card">
+          <input id="taskInput" class="task-input" type="text" placeholder="这轮只做一件小事，例如：改 1 个页面按钮状态" />
+          <div class="row">
+            <button class="primary" id="startPauseBtn">开始</button>
+            <button class="ghost" id="resetBtn">重置</button>
+          </div>
+          <div class="row">
+            <button class="tiny" id="skipBtn">跳到下一阶段</button>
+            <button class="tiny" id="addMinBtn">+1 分钟缓冲</button>
+            <button class="tiny" id="minusMinBtn">-1 分钟</button>
+          </div>
+
+          <div class="hint" id="encourageBox">
+            小兔启动提醒：先做得丑一点、慢一点、少一点，都比“还没开始”强。今天只要把身体放到任务旁边，就已经很棒了。
+          </div>
+
+          <div class="focus-tools">
+            <label class="toggle"><span>完成时提示音</span><input type="checkbox" id="soundToggle" checked /></label>
+            <label class="toggle"><span>自动切换阶段</span><input type="checkbox" id="autoToggle" checked /></label>
+            <label class="toggle"><span>抖动提醒文案</span><input type="checkbox" id="nudgeToggle" checked /></label>
+            <label class="toggle"><span>专注时隐藏秒数</span><input type="checkbox" id="hideSecondsToggle" /></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b id="pomodoroCount">0</b><span>已完成番茄</span></div>
+        <div class="stat"><b id="focusMinutes">0</b><span>累计专注分钟</span></div>
+        <div class="stat"><b id="streakCount">0</b><span>连续完成轮数</span></div>
+        <div class="stat"><b id="sessionCount">0</b><span>启动次数</span></div>
+      </div>
+      <div class="footer-note">建议搭配：耳机白噪音 + 桌面只留一个任务 + 做完立刻打勾。</div>
+    </section>
+
+    <aside class="card side">
+      <div class="settings">
+        <h3>时长设置</h3>
+        <div class="setting-grid">
+          <div class="field">
+            <label>专注</label>
+            <input type="number" id="focusInput" min="1" max="90" value="25" />
+          </div>
+          <div class="field">
+            <label>短休息</label>
+            <input type="number" id="shortBreakInput" min="1" max="30" value="5" />
+          </div>
+          <div class="field">
+            <label>长休息</label>
+            <input type="number" id="longBreakInput" min="1" max="60" value="15" />
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>几轮后长休息</label>
+          <input type="number" id="roundsBeforeLongInput" min="2" max="8" value="4" />
+        </div>
+      </div>
+
+      <div class="micro-list">
+        <h3>启动用微任务</h3>
+        <ul id="microList">
+          <li class="micro-item"><input type="checkbox" data-key="m1" /> <span>先做 2 分钟，不管质量，只许开始。</span></li>
+          <li class="micro-item"><input type="checkbox" data-key="m2" /> <span>把任务拆成“打开文件 → 找到位置 → 改一个点”。</span></li>
+          <li class="micro-item"><input type="checkbox" data-key="m3" /> <span>只允许自己卡 60 秒，卡住就换“更小一步”。</span></li>
+          <li class="micro-item"><input type="checkbox" data-key="m4" /> <span>结束前写一行“下一步做什么”，方便下一轮接上。</span></li>
+        </ul>
+      </div>
+
+      <div class="rewards">
+        <h3>小兔奖励清单</h3>
+        <ul id="rewardList">
+          <li class="reward-item"><input type="checkbox" data-key="r1" /> <span>完成 1 个番茄：摸摸自己，喝两口水。</span></li>
+          <li class="reward-item"><input type="checkbox" data-key="r2" /> <span>完成 2 个番茄：刷 5 分钟喜欢的内容。</span></li>
+          <li class="reward-item"><input type="checkbox" data-key="r3" /> <span>完成 4 个番茄：允许自己吃点喜欢的小零食。</span></li>
+          <li class="reward-item"><input type="checkbox" data-key="r4" /> <span>今天收工：写一句“我已经有在往前了”。</span></li>
+        </ul>
+      </div>
+
+      <div class="install-box">
+        <h3>存到 iPhone</h3>
+        <p>先把这个 html 存到“文件”App，再用 Safari 打开，点分享按钮，选择“添加到主屏幕”。以后就能像小应用一样点开啦。</p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = 'softsoft-pomodoro-v2';
+
+    const state = {
+      phase: 'focus',
+      running: false,
+      timer: null,
+      totalSeconds: 25 * 60,
+      remainingSeconds: 25 * 60,
+      pomodorosDone: 0,
+      streak: 0,
+      todayFocusMinutes: 0,
+      sessionCount: 0
+    };
+
+    const els = {
+      ring: document.getElementById('ring'),
+      phaseLabel: document.getElementById('phaseLabel'),
+      timeDisplay: document.getElementById('timeDisplay'),
+      taskInput: document.getElementById('taskInput'),
+      taskLabel: document.getElementById('taskLabel'),
+      startPauseBtn: document.getElementById('startPauseBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      skipBtn: document.getElementById('skipBtn'),
+      addMinBtn: document.getElementById('addMinBtn'),
+      minusMinBtn: document.getElementById('minusMinBtn'),
+      soundToggle: document.getElementById('soundToggle'),
+      autoToggle: document.getElementById('autoToggle'),
+      nudgeToggle: document.getElementById('nudgeToggle'),
+      hideSecondsToggle: document.getElementById('hideSecondsToggle'),
+      focusInput: document.getElementById('focusInput'),
+      shortBreakInput: document.getElementById('shortBreakInput'),
+      longBreakInput: document.getElementById('longBreakInput'),
+      roundsBeforeLongInput: document.getElementById('roundsBeforeLongInput'),
+      pomodoroCount: document.getElementById('pomodoroCount'),
+      focusMinutes: document.getElementById('focusMinutes'),
+      streakCount: document.getElementById('streakCount'),
+      sessionCount: document.getElementById('sessionCount'),
+      microPrompt: document.getElementById('microPrompt'),
+      encourageBox: document.getElementById('encourageBox'),
+      toast: document.getElementById('toast')
+    };
+
+    const phaseMeta = {
+      focus: {
+        label: '专注时间',
+        prompt: ['只做眼前这一小步', '先做 2 分钟也算开始', '卡住就把任务再切小', '不用完美，先推进'],
+        box: '现在只管这一轮，不评判自己，不预判全部。哪怕只推进一点点，也是在变好。'
+      },
+      shortBreak: {
+        label: '短休息',
+        prompt: ['起来伸个懒腰', '喝水、眨眨眼、转转肩', '不要开始刷到停不下来哦', '回来继续陪任务'],
+        box: '休息不是偷懒，是为了让脑子别过热。短休息结束就回来，不需要重新立大志。'
+      },
+      longBreak: {
+        label: '长休息',
+        prompt: ['你已经很棒了', '去走动一下，让脑子透气', '奖励自己一点快乐吧', '回来时从“下一步”接上'],
+        box: '长休息是正经奖励。今天不是拼命，是让自己能稳定地往前。'
+      }
+    };
+
+    function showToast(text){
+      els.toast.textContent = text;
+      els.toast.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(()=>els.toast.classList.remove('show'), 1800);
+    }
+
+    function getDurations() {
+      return {
+        focus: Math.max(1, Number(els.focusInput.value || 25)) * 60,
+        shortBreak: Math.max(1, Number(els.shortBreakInput.value || 5)) * 60,
+        longBreak: Math.max(1, Number(els.longBreakInput.value || 15)) * 60,
+        roundsBeforeLong: Math.max(2, Number(els.roundsBeforeLongInput.value || 4))
+      };
+    }
+
+    function formatTime(sec) {
+      const minutes = Math.floor(sec / 60);
+      const seconds = sec % 60;
+      if (els.hideSecondsToggle.checked && state.phase === 'focus' && state.running) {
+        return String(minutes).padStart(2, '0') + ':--';
+      }
+      return String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    }
+
+    function currentTaskText() {
+      const value = els.taskInput.value.trim();
+      return value || '先写下这轮最小任务 ✨';
+    }
+
+    function updateRing() {
+      const progress = 1 - (state.remainingSeconds / state.totalSeconds);
+      const deg = Math.max(0, Math.min(360, Math.round(progress * 360)));
+      let c1 = '#ff8fb1', c2 = '#ffd3e0';
+      if (state.phase === 'shortBreak') { c1 = '#7bc8a4'; c2 = '#daf3e7'; }
+      if (state.phase === 'longBreak') { c1 = '#a88bff'; c2 = '#e7e0ff'; }
+      els.ring.style.background = `conic-gradient(${c1} ${deg}deg, ${c2} ${deg}deg, #f7edf4 360deg)`;
+    }
+
+    function updateUI() {
+      els.phaseLabel.textContent = phaseMeta[state.phase].label;
+      els.timeDisplay.textContent = formatTime(state.remainingSeconds);
+      els.taskLabel.textContent = currentTaskText();
+      els.startPauseBtn.textContent = state.running ? '暂停' : '开始';
+      els.pomodoroCount.textContent = state.pomodorosDone;
+      els.focusMinutes.textContent = state.todayFocusMinutes;
+      els.streakCount.textContent = state.streak;
+      els.sessionCount.textContent = state.sessionCount;
+      if (els.nudgeToggle.checked) {
+        const arr = phaseMeta[state.phase].prompt;
+        const idx = Math.floor((Date.now() / 4000) % arr.length);
+        els.microPrompt.textContent = arr[idx];
+      } else {
+        els.microPrompt.textContent = 'Softsoft 正在努力中';
+      }
+      els.encourageBox.textContent = phaseMeta[state.phase].box;
+      updateRing();
+      document.title = `${phaseMeta[state.phase].label} · ${formatTime(state.remainingSeconds)}`;
+    }
+
+    function collectChecks(selector){
+      const data = {};
+      document.querySelectorAll(selector).forEach(el => {
+        data[el.dataset.key] = el.checked;
+      });
+      return data;
+    }
+
+    function applyChecks(selector, data){
+      document.querySelectorAll(selector).forEach(el => {
+        if (data && Object.prototype.hasOwnProperty.call(data, el.dataset.key)) {
+          el.checked = !!data[el.dataset.key];
+        }
+      });
+    }
+
+    function saveState() {
+      const payload = {
+        state: {
+          phase: state.phase,
+          running: state.running,
+          totalSeconds: state.totalSeconds,
+          remainingSeconds: state.remainingSeconds,
+          pomodorosDone: state.pomodorosDone,
+          streak: state.streak,
+          todayFocusMinutes: state.todayFocusMinutes,
+          sessionCount: state.sessionCount
+        },
+        settings: {
+          task: els.taskInput.value,
+          focus: els.focusInput.value,
+          shortBreak: els.shortBreakInput.value,
+          longBreak: els.longBreakInput.value,
+          roundsBeforeLong: els.roundsBeforeLongInput.value,
+          sound: els.soundToggle.checked,
+          auto: els.autoToggle.checked,
+          nudge: els.nudgeToggle.checked,
+          hideSeconds: els.hideSecondsToggle.checked
+        },
+        checks: {
+          micro: collectChecks('#microList input[type="checkbox"]'),
+          reward: collectChecks('#rewardList input[type="checkbox"]')
+        }
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+
+        if (saved.settings) {
+          els.taskInput.value = saved.settings.task || '';
+          els.focusInput.value = saved.settings.focus || 25;
+          els.shortBreakInput.value = saved.settings.shortBreak || 5;
+          els.longBreakInput.value = saved.settings.longBreak || 15;
+          els.roundsBeforeLongInput.value = saved.settings.roundsBeforeLong || 4;
+          els.soundToggle.checked = saved.settings.sound !== false;
+          els.autoToggle.checked = saved.settings.auto !== false;
+          els.nudgeToggle.checked = saved.settings.nudge !== false;
+          els.hideSecondsToggle.checked = !!saved.settings.hideSeconds;
+        }
+        if (saved.state) {
+          state.phase = saved.state.phase || 'focus';
+          state.running = false; // 防止刷新后定时器失控
+          state.totalSeconds = Number(saved.state.totalSeconds || getDurations()[state.phase]);
+          state.remainingSeconds = Number(saved.state.remainingSeconds || state.totalSeconds);
+          state.pomodorosDone = Number(saved.state.pomodorosDone || 0);
+          state.streak = Number(saved.state.streak || 0);
+          state.todayFocusMinutes = Number(saved.state.todayFocusMinutes || 0);
+          state.sessionCount = Number(saved.state.sessionCount || 0);
+        }
+        if (saved.checks) {
+          applyChecks('#microList input[type="checkbox"]', saved.checks.micro);
+          applyChecks('#rewardList input[type="checkbox"]', saved.checks.reward);
+        }
+      } catch (e) {
+        console.warn('loadState failed', e);
+      }
+    }
+
+    function beep() {
+      if (!els.soundToggle.checked) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [523.25, 659.25, 783.99];
+        let t = ctx.currentTime;
+        notes.forEach((f, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = f;
+          gain.gain.setValueAtTime(0.0001, t + i * 0.13);
+          gain.gain.exponentialRampToValueAtTime(0.12, t + i * 0.13 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.13 + 0.12);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(t + i * 0.13);
+          osc.stop(t + i * 0.13 + 0.14);
+        });
+      } catch (e) {}
+    }
+
+    function setPhase(phase) {
+      const d = getDurations();
+      state.phase = phase;
+      state.totalSeconds = d[phase];
+      state.remainingSeconds = d[phase];
+      updateUI();
+      saveState();
+    }
+
+    function finishPhase() {
+      beep();
+      if (state.phase === 'focus') {
+        state.pomodorosDone += 1;
+        state.streak += 1;
+        state.todayFocusMinutes += Math.round(state.totalSeconds / 60);
+        const d = getDurations();
+        const next = (state.pomodorosDone % d.roundsBeforeLong === 0) ? 'longBreak' : 'shortBreak';
+        setPhase(next);
+        showToast('完成一轮啦，软软好棒 ✨');
+      } else {
+        setPhase('focus');
+        showToast('休息结束，轻轻回来继续吧');
+      }
+      if (!els.autoToggle.checked) {
+        pauseTimer();
+      }
+      updateUI();
+      saveState();
+    }
+
+    function tick() {
+      state.remainingSeconds -= 1;
+      if (state.remainingSeconds <= 0) {
+        finishPhase();
+        return;
+      }
+      updateUI();
+      saveState();
+    }
+
+    function startTimer() {
+      if (state.running) return;
+      state.running = true;
+      state.sessionCount += 1;
+      state.timer = setInterval(tick, 1000);
+      updateUI();
+      saveState();
+    }
+
+    function pauseTimer() {
+      state.running = false;
+      clearInterval(state.timer);
+      state.timer = null;
+      updateUI();
+      saveState();
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      const d = getDurations();
+      state.totalSeconds = d[state.phase];
+      state.remainingSeconds = d[state.phase];
+      state.streak = 0;
+      updateUI();
+      saveState();
+      showToast('这一轮已重置');
+    }
+
+    els.startPauseBtn.addEventListener('click', () => {
+      state.running ? pauseTimer() : startTimer();
+    });
+
+    els.resetBtn.addEventListener('click', resetTimer);
+
+    els.skipBtn.addEventListener('click', () => {
+      pauseTimer();
+      finishPhase();
+    });
+
+    els.addMinBtn.addEventListener('click', () => {
+      state.remainingSeconds += 60;
+      state.totalSeconds += 60;
+      updateUI();
+      saveState();
+      showToast('加了 1 分钟缓冲');
+    });
+
+    els.minusMinBtn.addEventListener('click', () => {
+      state.remainingSeconds = Math.max(60, state.remainingSeconds - 60);
+      state.totalSeconds = Math.max(state.remainingSeconds, state.totalSeconds - 60);
+      updateUI();
+      saveState();
+      showToast('减了 1 分钟');
+    });
+
+    ['focusInput','shortBreakInput','longBreakInput','roundsBeforeLongInput'].forEach(id => {
+      els[id].addEventListener('change', () => {
+        if (!state.running) {
+          const d = getDurations();
+          state.totalSeconds = d[state.phase];
+          state.remainingSeconds = d[state.phase];
+        }
+        updateUI();
+        saveState();
+      });
+    });
+
+    ['taskInput', 'hideSecondsToggle', 'nudgeToggle', 'soundToggle', 'autoToggle'].forEach(id => {
+      els[id].addEventListener('input', () => { updateUI(); saveState(); });
+      els[id].addEventListener('change', () => { updateUI(); saveState(); });
+    });
+
+    document.querySelectorAll('#microList input[type="checkbox"], #rewardList input[type="checkbox"]').forEach(el => {
+      el.addEventListener('change', saveState);
+    });
+
+    window.addEventListener('beforeunload', saveState);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        saveState();
+      } else {
+        updateUI();
+      }
+    });
+
+    loadState();
+    if (!state.totalSeconds || !state.remainingSeconds) {
+      const d = getDurations();
+      state.totalSeconds = d[state.phase];
+      state.remainingSeconds = d[state.phase];
+    }
+    updateUI();
+    saveState();
+
+    if (window.navigator.standalone) {
+      showToast('已是主屏幕模式，直接开工吧');
+    }
+  </script>
+</body>
+</html>
